@@ -4,7 +4,9 @@
       "PowerShell(Get-ChildItem *)",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\james\\\\Downloads\\\\ClaudeSkillsExtracted\\\\Claude Skills\" -Recurse -File | Group-Object { $_.Directory.Name } | ForEach-Object { \"$\\($_.Name\\): \" + \\($_.Group.Name -join ', '\\) })",
       "PowerShell(git *)",
-      "PowerShell(git ls-remote *)"
+      "PowerShell(git ls-remote *)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\Git\\\\cmd;C:\\\\Program Files\\\\Git\\\\bin\"; git status; Write-Output \"---\"; git remote -v)",
+      "PowerShell(git diff *)"
     ]
   }
 }
