@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\james\\\\Downloads\\\\ClaudeSkillsExtracted\\\\Claude Skills\" -Recurse -File | Group-Object { $_.Directory.Name } | ForEach-Object { \"$\\($_.Name\\): \" + \\($_.Group.Name -join ', '\\) })",
+      "PowerShell(git *)",
+      "PowerShell(git ls-remote *)"
+    ]
+  }
+}
