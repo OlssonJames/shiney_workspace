@@ -4,10 +4,10 @@
 
 /* ---------- Config: the 6 tracked areas ---------- */
 const AREAS = [
-  { id: 'sidehustle', label: 'Side Hustle', icon: '💼', color: '#6366f1', notes: true, notesPlaceholder: 'What did you work on today?' },
+  { id: 'sidehustle', label: 'Side Hustle', icon: '💼', color: '#6366f1', notes: true, notesPlaceholder: 'What did you work on today?', notesAppLink: '../notes/index.html#sidehustle' },
   { id: 'gym', label: 'Gym', icon: '🏋️', color: '#f97316', notes: false },
-  { id: 'bjj', label: 'BJJ', icon: '🥋', color: '#14b8a6', notes: true, notesPlaceholder: 'Technique / rolls / progress from today’s session...' },
-  { id: 'coding', label: 'Coding Skills', icon: '💻', color: '#8b5cf6', notes: true, notesPlaceholder: 'What did you learn or build today?' },
+  { id: 'bjj', label: 'BJJ', icon: '🥋', color: '#14b8a6', notes: true, notesPlaceholder: 'Technique / rolls / progress from today’s session...', notesAppLink: '../notes/index.html#bjj' },
+  { id: 'coding', label: 'Coding Skills', icon: '💻', color: '#8b5cf6', notes: true, notesPlaceholder: 'What did you learn or build today?', notesAppLink: '../notes/index.html#coding' },
   { id: 'growth', label: 'Personal Growth', icon: '🌱', color: '#ec4899', notes: true, notesPlaceholder: 'Reflections, small wins, mindset notes...' },
   { id: 'screentime', label: 'Screen Time', icon: '📵', color: '#0ea5e9', notes: true, hasValue: true, valueLabel: 'Hours (optional)', notesPlaceholder: 'Any notes on today’s screen time...' },
 ];
@@ -241,6 +241,7 @@ function renderDaily(ds) {
           <input type="number" min="0" step="0.25" data-action="value" data-area="${a.id}" value="${entry.value ?? ''}" placeholder="e.g. 3.5" />
         </div>` : ''}
       ${a.notes ? `<textarea class="area-notes" data-action="note" data-area="${a.id}" placeholder="${a.notesPlaceholder || 'Notes...'}">${escapeHtml(entry.note || '')}</textarea>` : ''}
+      ${a.notesAppLink ? `<a href="${a.notesAppLink}" class="notes-app-link" target="_blank" rel="noopener">📓 Open detailed log →</a>` : ''}
     </div>`;
   }).join('');
 

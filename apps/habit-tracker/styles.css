@@ -140,6 +140,8 @@ button, input, textarea, select { font-family: inherit; }
   width: 90px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
   border-radius: var(--radius-sm); padding: 7px 9px; font-size: 13px;
 }
+.notes-app-link { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.notes-app-link:hover { text-decoration: underline; }
 
 .rating-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
