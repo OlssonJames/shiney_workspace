@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Project Ideas</title>
+<meta name="description" content="Lightweight backlog for project and app ideas." />
+<meta name="theme-color" content="#6366f1" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%236366f1'/%3E%3Cpath d='M32 16a12 12 0 0 0-6 22.4V42a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3.6A12 12 0 0 0 32 16Z' fill='white'/%3E%3Crect x='27' y='46' width='10' height='3' rx='1.5' fill='white'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">💡</span>
+      <span class="brand-name">Project Ideas</span>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn labeled" id="exportBtn" title="Export backlog">⬇ <span class="btn-label">Export</span></button>
+      <button class="icon-btn labeled" id="importBtn" title="Import backlog">⬆ <span class="btn-label">Import</span></button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;" />
+    </div>
+  </header>
+
+  <main id="app" class="app-main"></main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
