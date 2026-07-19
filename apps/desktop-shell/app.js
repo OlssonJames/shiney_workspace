@@ -16,11 +16,85 @@ const APP_BY_ID = Object.fromEntries(APPS.map(a => [a.id, a]));
 const MIN_W = 360;
 const MIN_H = 260;
 
+/* ---------- Window snapping ---------- */
+const SNAP_MARGIN = 20;   // how close (px) the cursor must be to an edge/corner to trigger
+const SNAP_GAP = 8;       // gap between side-by-side snapped windows
+const UNSNAP_THRESHOLD = 6; // px of drag before a snapped window pops free
+
 const state = {
-  windows: {}, // appId -> { el, x, y, w, h, z, minimized, maximized, prevRect }
+  windows: {}, // appId -> { el, x, y, w, h, z, minimized, maximized, prevRect, snapped, restoreRect }
   zCounter: 10,
   cascadeCount: 0,
 };
+
+// The usable area for snapped windows — mirrors the insets toggleMaximize
+// already uses (8px sides, ~90px reserved at the bottom for the dock).
+function workArea() {
+  const d = document.getElementById('desktop');
+  return { x: 8, y: 8, w: d.clientWidth - 16, h: d.clientHeight - 98 };
+}
+
+function snapRect(zone) {
+  const a = workArea();
+  const halfW = (a.w - SNAP_GAP) / 2;
+  const halfH = (a.h - SNAP_GAP) / 2;
+  const rightX = a.x + halfW + SNAP_GAP;
+  const bottomY = a.y + halfH + SNAP_GAP;
+  switch (zone) {
+    case 'full':         return { x: a.x, y: a.y, w: a.w, h: a.h };
+    case 'left':         return { x: a.x, y: a.y, w: halfW, h: a.h };
+    case 'right':        return { x: rightX, y: a.y, w: halfW, h: a.h };
+    case 'top-left':     return { x: a.x, y: a.y, w: halfW, h: halfH };
+    case 'top-right':    return { x: rightX, y: a.y, w: halfW, h: halfH };
+    case 'bottom-left':  return { x: a.x, y: bottomY, w: halfW, h: halfH };
+    case 'bottom-right': return { x: rightX, y: bottomY, w: halfW, h: halfH };
+    default:             return null;
+  }
+}
+
+// Corners win over edges; top edge alone maximizes; bottom edge alone is
+// dead space (the dock lives there), only bottom corners snap.
+function detectSnapZone(cx, cy) {
+  const nearL = cx <= SNAP_MARGIN;
+  const nearR = cx >= window.innerWidth - SNAP_MARGIN;
+  const nearT = cy <= SNAP_MARGIN;
+  const nearB = cy >= window.innerHeight - SNAP_MARGIN;
+  if (nearT && nearL) return 'top-left';
+  if (nearT && nearR) return 'top-right';
+  if (nearB && nearL) return 'bottom-left';
+  if (nearB && nearR) return 'bottom-right';
+  if (nearT) return 'full';
+  if (nearL) return 'left';
+  if (nearR) return 'right';
+  return null;
+}
+
+let snapPreviewEl = null;
+function showSnapPreview(zone) {
+  const r = snapRect(zone);
+  snapPreviewEl.style.left = `${r.x}px`;
+  snapPreviewEl.style.top = `${r.y}px`;
+  snapPreviewEl.style.width = `${r.w}px`;
+  snapPreviewEl.style.height = `${r.h}px`;
+  snapPreviewEl.classList.add('visible');
+}
+function hideSnapPreview() {
+  snapPreviewEl.classList.remove('visible');
+}
+
+function snapTo(appId, zone) {
+  const w = state.windows[appId];
+  if (!w) return;
+  // Remember the free-floating size once, so chained re-snaps
+  // (left -> right -> quarter) still restore to the original size.
+  if (!w.snapped) w.restoreRect = { w: w.w, h: w.h };
+  w.snapped = zone;
+  const r = snapRect(zone);
+  Object.assign(w, { x: r.x, y: r.y, w: r.w, h: r.h });
+  w.el.classList.add('snap-anim');
+  applyRect(appId);
+  setTimeout(() => w.el.classList.remove('snap-anim'), 240);
+}
 
 function nextZ() { return ++state.zCounter; }
 
@@ -102,6 +176,7 @@ function createWindow(appId) {
   state.windows[appId] = {
     el: win, x, y, w: defaultW, h: defaultH, z: state.zCounter,
     minimized: false, maximized: false, prevRect: null,
+    snapped: null, restoreRect: null,
   };
 
   wireWindow(appId);
@@ -206,31 +281,68 @@ function wireWindow(appId) {
 
 function startDragOrResize(appId, mode, startEvent) {
   const w = state.windows[appId];
-  const startX = startEvent.clientX;
-  const startY = startEvent.clientY;
-  const orig = { x: w.x, y: w.y, w: w.w, h: w.h };
+  let startX = startEvent.clientX;
+  let startY = startEvent.clientY;
+  let orig = { x: w.x, y: w.y, w: w.w, h: w.h };
+  let activeZone = null;
   document.body.classList.add('is-interacting');
+
+  // If the user grabs the window again mid-snap-animation, kill the
+  // geometry transition immediately so the drag tracks the pointer.
+  w.el.classList.remove('snap-anim');
+
+  // Resizing a snapped window turns it back into a normal floating
+  // window at whatever size the resize produces.
+  if (mode !== 'drag' && w.snapped) w.snapped = null;
 
   function onMove(e) {
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
 
     if (mode === 'drag') {
+      // Dragging a snapped window away un-snaps it: restore the pre-snap
+      // size and keep the grab point under the cursor (same proportional
+      // position along the titlebar), like Windows/macOS.
+      if (w.snapped) {
+        if (Math.abs(dx) <= UNSNAP_THRESHOLD && Math.abs(dy) <= UNSNAP_THRESHOLD) return;
+        const restored = w.restoreRect || { w: Math.min(920, window.innerWidth - 80), h: Math.min(640, window.innerHeight - 140) };
+        const relX = (startX - w.x) / w.w;
+        w.w = restored.w;
+        w.h = restored.h;
+        w.x = e.clientX - relX * restored.w;
+        w.y = Math.max(0, e.clientY - 14);
+        w.snapped = null;
+        startX = e.clientX;
+        startY = e.clientY;
+        orig = { x: w.x, y: w.y, w: w.w, h: w.h };
+        applyRect(appId);
+        return;
+      }
+
       w.x = orig.x + dx;
       w.y = Math.max(0, orig.y + dy);
-    } else {
-      if (mode.includes('e')) w.w = Math.max(MIN_W, orig.w + dx);
-      if (mode.includes('s')) w.h = Math.max(MIN_H, orig.h + dy);
-      if (mode.includes('w')) {
-        const newW = Math.max(MIN_W, orig.w - dx);
-        w.x = orig.x + (orig.w - newW);
-        w.w = newW;
+      applyRect(appId);
+
+      const zone = detectSnapZone(e.clientX, e.clientY);
+      if (zone !== activeZone) {
+        activeZone = zone;
+        if (zone) showSnapPreview(zone);
+        else hideSnapPreview();
       }
-      if (mode.includes('n')) {
-        const newH = Math.max(MIN_H, orig.h - dy);
-        w.y = orig.y + (orig.h - newH);
-        w.h = newH;
-      }
+      return;
+    }
+
+    if (mode.includes('e')) w.w = Math.max(MIN_W, orig.w + dx);
+    if (mode.includes('s')) w.h = Math.max(MIN_H, orig.h + dy);
+    if (mode.includes('w')) {
+      const newW = Math.max(MIN_W, orig.w - dx);
+      w.x = orig.x + (orig.w - newW);
+      w.w = newW;
+    }
+    if (mode.includes('n')) {
+      const newH = Math.max(MIN_H, orig.h - dy);
+      w.y = orig.y + (orig.h - newH);
+      w.h = newH;
     }
     applyRect(appId);
   }
@@ -239,6 +351,8 @@ function startDragOrResize(appId, mode, startEvent) {
     document.removeEventListener('pointermove', onMove);
     document.removeEventListener('pointerup', onUp);
     document.body.classList.remove('is-interacting');
+    hideSnapPreview();
+    if (mode === 'drag' && activeZone) snapTo(appId, activeZone);
   }
 
   document.addEventListener('pointermove', onMove);
@@ -247,3 +361,6 @@ function startDragOrResize(appId, mode, startEvent) {
 
 /* ---------- Init ---------- */
 renderDock();
+snapPreviewEl = document.createElement('div');
+snapPreviewEl.className = 'snap-preview';
+document.getElementById('desktop').appendChild(snapPreviewEl);
