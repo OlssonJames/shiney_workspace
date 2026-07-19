@@ -87,7 +87,6 @@ hudEl.innerHTML = `
   <div class="hud-date" id="hudDate"></div>
   <div class="hud-areas" id="hudAreas"></div>
   <button class="hud-block" id="hudBlock" title="Open Day Planner"></button>
-  <div class="hud-hint"><kbd>Ctrl</kbd>+<kbd>K</kbd> command palette · <kbd>Alt</kbd>+<kbd>1–4</kbd> apps</div>
 `;
 document.getElementById('desktop').appendChild(hudEl);
 
