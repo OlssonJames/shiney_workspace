@@ -856,3 +856,11 @@ checkReminder();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => { /* file:// or unsupported — safe to ignore */ });
 }
+
+// Reflect changes made from outside this document (Notes/Calendar sync
+// writes, or the desktop shell's voice assistant) without needing a
+// manual reload — fires when another same-origin window/iframe writes
+// to this same localStorage key.
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY) { Store.load(); render(); }
+});

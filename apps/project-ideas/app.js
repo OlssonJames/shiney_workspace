@@ -248,3 +248,11 @@ document.getElementById('importFile').addEventListener('change', importData);
 /* ---------- Init ---------- */
 Store.load();
 render();
+
+// Reflect changes made from outside this document (e.g. the desktop
+// shell's voice assistant adding an idea directly into storage) without
+// needing a manual reload — fires in this window when another same-origin
+// window/iframe writes to the same localStorage key.
+window.addEventListener('storage', (e) => {
+  if (e.key === STORAGE_KEY) { Store.load(); render(); }
+});

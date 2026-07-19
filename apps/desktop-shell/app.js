@@ -67,7 +67,7 @@ function createWindow(appId) {
   const y = 40 + cascade;
 
   const win = document.createElement('div');
-  win.className = 'window';
+  win.className = 'window opening';
   win.id = `win-${appId}`;
   win.style.left = `${x}px`;
   win.style.top = `${y}px`;
@@ -93,6 +93,12 @@ function createWindow(appId) {
 
   desktop.appendChild(win);
 
+  // Force a layout flush so the "opening" starting state actually
+  // paints before we remove it — otherwise the browser may coalesce
+  // both class changes into one frame and skip the transition.
+  void win.offsetWidth;
+  requestAnimationFrame(() => win.classList.remove('opening'));
+
   state.windows[appId] = {
     el: win, x, y, w: defaultW, h: defaultH, z: state.zCounter,
     minimized: false, maximized: false, prevRect: null,
@@ -115,9 +121,10 @@ function focusWindow(appId) {
 function closeWindow(appId) {
   const w = state.windows[appId];
   if (!w) return;
-  w.el.remove();
-  delete state.windows[appId];
+  w.el.classList.add('closing');
+  delete state.windows[appId]; // frees the dock/focus slot immediately
   updateDockIndicators();
+  setTimeout(() => w.el.remove(), 180);
 }
 
 function minimizeWindow(appId) {
