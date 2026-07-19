@@ -614,6 +614,91 @@ function exportAll() {
   showToast('Backup downloaded');
 }
 
+/* ---------- Sync to Habit Tracker ---------- */
+const TRACKER_STORAGE_KEY = 'habitTrackerData.v1';
+
+function formatEntryForSync(section, entry) {
+  const parts = [];
+  section.fields.forEach(f => {
+    if (f.key === 'link') return; // handled separately, appended below
+    if (f.type === 'tags') {
+      if (Array.isArray(entry[f.key]) && entry[f.key].length) parts.push(entry[f.key].join(', '));
+    } else if (entry[f.key]) {
+      if (f.key === 'timeSpent') parts.push(`${entry[f.key]} hrs`);
+      else if (f.key === 'revenue') parts.push(`$${entry[f.key]}`);
+      else parts.push(entry[f.key]);
+    }
+  });
+  const header = parts.length ? `[${parts.join(' · ')}]` : '';
+  const linkLine = entry.link ? entry.link : '';
+  return [header, entry.note || '', linkLine].filter(Boolean).join('\n').trim();
+}
+
+function computeSyncPayload() {
+  const notes = {};
+  SECTIONS.forEach(section => {
+    const byDate = {};
+    const sorted = [...Store.data.entries[section.id]].sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt));
+    sorted.forEach(entry => {
+      const text = formatEntryForSync(section, entry);
+      if (!text) return;
+      byDate[entry.date] = byDate[entry.date] ? byDate[entry.date] + '\n\n---\n\n' + text : text;
+    });
+    notes[section.id] = byDate;
+  });
+  return { kind: 'habit-tracker-notes-sync', version: 1, generatedAt: new Date().toISOString(), notes };
+}
+
+function mergeSyncIntoTrackerData(trackerData, payload) {
+  let updated = 0;
+  const emptyDayAreas = () => ({
+    sidehustle: { done: false, note: '' }, gym: { done: false },
+    bjj: { done: false, note: '' }, coding: { done: false, note: '' },
+    growth: { done: false, note: '' }, screentime: { done: false, note: '', value: null },
+  });
+  Object.entries(payload.notes).forEach(([areaId, byDate]) => {
+    Object.entries(byDate).forEach(([ds, text]) => {
+      if (!trackerData.days[ds]) trackerData.days[ds] = { ...emptyDayAreas(), rating: null };
+      const day = trackerData.days[ds];
+      if (!day[areaId]) day[areaId] = { done: false, note: '' };
+      const marker = '[Synced from Session Notes]';
+      if (!day[areaId].note) { day[areaId].note = `${marker}\n${text}`; updated++; }
+      else if (!day[areaId].note.includes(text)) { day[areaId].note += `\n\n${marker}\n${text}`; updated++; }
+    });
+  });
+  return updated;
+}
+
+function downloadSyncFile(payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `notes-sync-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function syncToTracker() {
+  const payload = computeSyncPayload();
+  try {
+    const raw = localStorage.getItem(TRACKER_STORAGE_KEY);
+    if (raw) {
+      const trackerData = JSON.parse(raw);
+      if (trackerData && trackerData.days) {
+        const updated = mergeSyncIntoTrackerData(trackerData, payload);
+        localStorage.setItem(TRACKER_STORAGE_KEY, JSON.stringify(trackerData));
+        showToast(updated ? `Synced directly — ${updated} day note(s) updated in Tracker` : 'Already up to date — nothing new to sync');
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('Direct sync failed, falling back to file export.', e);
+  }
+  downloadSyncFile(payload);
+  showToast('Tracker not found in this browser — downloaded a sync file instead (import it from Tracker → Settings)');
+}
+
 /* ---------- Global modal close handling ---------- */
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-action="close-modal"]')) { closeModal(); return; }
@@ -623,6 +708,7 @@ document.addEventListener('click', (e) => {
 
 document.getElementById('importBtn').addEventListener('click', openImportModal);
 document.getElementById('exportBtn').addEventListener('click', exportAll);
+document.getElementById('syncBtn').addEventListener('click', syncToTracker);
 
 /* ---------- Init ---------- */
 Store.load();

@@ -546,6 +546,17 @@ function openSettingsModal() {
         <input type="file" id="importFile" accept="application/json" style="display:none;" />
       </div>
     </div>
+
+    <hr class="divider" />
+
+    <div class="field-group">
+      <label class="field-label">Sync from Session Notes app</label>
+      <div class="field-help">Pulls your BJJ / Coding / Side Hustle entries from the separate Session Notes app into that day's note field here, matched by date. Safe to run repeatedly — it won't duplicate text that's already been synced.</div>
+      <div class="modal-actions">
+        <button class="btn" id="importNotesSyncBtn">⬆ Import Notes sync file</button>
+        <input type="file" id="importNotesSyncFile" accept="application/json" style="display:none;" />
+      </div>
+    </div>
   `);
 
   document.getElementById('reminderTimeInput').addEventListener('change', e => {
@@ -572,6 +583,45 @@ function openSettingsModal() {
   document.getElementById('exportBtn').addEventListener('click', exportData);
   document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
   document.getElementById('importFile').addEventListener('change', importData);
+
+  document.getElementById('importNotesSyncBtn').addEventListener('click', () => document.getElementById('importNotesSyncFile').click());
+  document.getElementById('importNotesSyncFile').addEventListener('change', importNotesSync);
+}
+
+/* ---------- Sync from Session Notes app ---------- */
+function mergeNotesSyncPayload(payload) {
+  let updated = 0;
+  Object.entries(payload.notes).forEach(([areaId, byDate]) => {
+    if (!AREA_BY_ID[areaId]) return;
+    Object.entries(byDate).forEach(([ds, text]) => {
+      const day = Store.ensureDay(ds);
+      if (!day[areaId]) return;
+      const marker = '[Synced from Session Notes]';
+      if (!day[areaId].note) { day[areaId].note = `${marker}\n${text}`; updated++; }
+      else if (!day[areaId].note.includes(text)) { day[areaId].note += `\n\n${marker}\n${text}`; updated++; }
+    });
+  });
+  return updated;
+}
+
+function importNotesSync(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!parsed || parsed.kind !== 'habit-tracker-notes-sync' || !parsed.notes) throw new Error('Not a valid Notes sync file');
+      const updated = mergeNotesSyncPayload(parsed);
+      Store.save(true);
+      showToast(updated ? `Synced ${updated} day note${updated === 1 ? '' : 's'} from Session Notes` : 'Already up to date — nothing new to sync');
+      closeModal();
+      render();
+    } catch (err) {
+      showToast('Import failed — not a valid Notes sync file');
+    }
+  };
+  reader.readAsText(file);
 }
 
 /* ---------- Modal helpers ---------- */
