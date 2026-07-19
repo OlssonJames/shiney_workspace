@@ -133,10 +133,58 @@ const COMMANDS = [
     },
   },
   {
+    test: /\b(briefing|brief me|status report|good (morning|afternoon|evening))\b/i,
+    run: () => buildBriefing(),
+  },
+  {
+    test: /\b(what('| i)?s left|remaining|still to do)\b/i,
+    run: () => buildWhatsLeft(),
+  },
+  {
+    test: /\b(thank you|thanks)\b/i,
+    run: () => `You're welcome.`,
+  },
+  {
+    test: /\b(are you there|hello|hey)\b/i,
+    run: () => `At your service.`,
+  },
+  {
     test: /\b(help|what can you do|commands)\b/i,
-    run: () => `Try: open notes, close calendar, what's my gym streak, or add a project idea called your idea name.`,
+    run: () => `Try: open notes, close calendar, what's my gym streak, add a project idea called your idea name, give me a briefing, or ask what's left today.`,
   },
 ];
+
+/* ---------- Spoken briefing (shares the HUD's data readers) ---------- */
+function buildBriefing() {
+  const now = new Date();
+  const h = now.getHours();
+  const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const parts = [`${greet}. It's ${dateStr}.`];
+  if (window.CommandCenter) {
+    const areas = window.CommandCenter.areaStatus();
+    const doneCount = areas.filter(a => a.done).length;
+    parts.push(`${doneCount} of 6 areas done today.`);
+    let best = null;
+    areas.forEach(a => {
+      const s = getStreak(a.id);
+      if (s !== null && (best === null || s > best.s)) best = { id: a.id, s };
+    });
+    if (best && best.s > 0) parts.push(`Longest active streak: ${AREA_LABELS[best.id]}, ${best.s} day${best.s === 1 ? '' : 's'}.`);
+    const nn = window.CommandCenter.nowNext();
+    if (nn.kind === 'now') parts.push(`Right now: ${nn.block.label || nn.block.categoryLabel}, until ${nn.block.end}.`);
+    else if (nn.kind === 'next') parts.push(`Next up: ${nn.block.label || nn.block.categoryLabel} at ${nn.block.start}.`);
+    else parts.push(`Nothing on the schedule for the rest of today.`);
+  }
+  return parts.join(' ');
+}
+
+function buildWhatsLeft() {
+  if (!window.CommandCenter) return `I can't reach the tracker data right now.`;
+  const left = window.CommandCenter.areaStatus().filter(a => !a.done);
+  if (!left.length) return `Nothing — all six areas are done today. Well done.`;
+  return `Still to do today: ${left.map(a => AREA_LABELS[a.id]).join(', ')}.`;
+}
 
 function handleTranscript(text) {
   for (const cmd of COMMANDS) {

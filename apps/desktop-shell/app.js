@@ -85,6 +85,10 @@ function hideSnapPreview() {
 function snapTo(appId, zone) {
   const w = state.windows[appId];
   if (!w) return;
+  // The command palette can snap a button-maximized window; clear that
+  // state so the two systems don't fight (drag stays blocked otherwise).
+  if (w.maximized) { w.maximized = false; if (w.prevRect) Object.assign(w, w.prevRect); }
+  if (w.minimized) restoreWindow(appId);
   // Remember the free-floating size once, so chained re-snaps
   // (left -> right -> quarter) still restore to the original size.
   if (!w.snapped) w.restoreRect = { w: w.w, h: w.h };
@@ -94,6 +98,59 @@ function snapTo(appId, zone) {
   w.el.classList.add('snap-anim');
   applyRect(appId);
   setTimeout(() => w.el.classList.remove('snap-anim'), 240);
+  focusWindow(appId);
+  saveLayout();
+}
+
+/* ---------- Session restore ----------
+   Persists which windows are open and their geometry/snap state, so
+   reopening the shell brings the workspace back. (Requested earlier as
+   "only if trivial" — it is now: the whole window state already lives
+   in one serializable object per window.) */
+const LAYOUT_KEY = 'desktopShellLayout.v1';
+let layoutSaveTimer = null;
+
+function saveLayout(immediate) {
+  const doSave = () => {
+    try {
+      const wins = {};
+      Object.entries(state.windows).forEach(([id, w]) => {
+        wins[id] = {
+          x: w.x, y: w.y, w: w.w, h: w.h, z: w.z,
+          minimized: w.minimized, maximized: w.maximized, prevRect: w.prevRect,
+          snapped: w.snapped, restoreRect: w.restoreRect,
+        };
+      });
+      localStorage.setItem(LAYOUT_KEY, JSON.stringify(wins));
+    } catch (e) { /* storage unavailable — layout just won't persist */ }
+  };
+  clearTimeout(layoutSaveTimer);
+  if (immediate) doSave();
+  else layoutSaveTimer = setTimeout(doSave, 300);
+}
+
+function restoreLayout() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LAYOUT_KEY)); } catch (e) { /* corrupt — start fresh */ }
+  if (!saved || typeof saved !== 'object') return;
+  Object.entries(saved)
+    .sort((a, b) => (a[1].z || 0) - (b[1].z || 0)) // recreate bottom-up so stacking order survives
+    .forEach(([id, s]) => {
+      if (!APP_BY_ID[id]) return;
+      createWindow(id);
+      const w = state.windows[id];
+      // Clamp into the current viewport in case the screen size changed.
+      w.x = Math.min(Math.max(-100, s.x), window.innerWidth - 120);
+      w.y = Math.min(Math.max(0, s.y), window.innerHeight - 120);
+      w.w = Math.max(MIN_W, s.w || w.w);
+      w.h = Math.max(MIN_H, s.h || w.h);
+      w.maximized = !!s.maximized;
+      w.prevRect = s.prevRect || null;
+      w.snapped = s.snapped || null;
+      w.restoreRect = s.restoreRect || null;
+      applyRect(id);
+      if (s.minimized) minimizeWindow(id);
+    });
 }
 
 function nextZ() { return ++state.zCounter; }
@@ -182,6 +239,7 @@ function createWindow(appId) {
   wireWindow(appId);
   focusWindow(appId);
   updateDockIndicators();
+  saveLayout();
 }
 
 function focusWindow(appId) {
@@ -200,6 +258,7 @@ function closeWindow(appId) {
   delete state.windows[appId]; // frees the dock/focus slot immediately
   updateDockIndicators();
   setTimeout(() => w.el.remove(), 180);
+  saveLayout();
 }
 
 function minimizeWindow(appId) {
@@ -208,6 +267,7 @@ function minimizeWindow(appId) {
   w.minimized = true;
   w.el.style.display = 'none';
   updateDockIndicators();
+  saveLayout();
 }
 
 function restoreWindow(appId) {
@@ -216,6 +276,7 @@ function restoreWindow(appId) {
   w.minimized = false;
   w.el.style.display = 'flex';
   updateDockIndicators();
+  saveLayout();
 }
 
 function toggleMaximize(appId) {
@@ -234,6 +295,7 @@ function toggleMaximize(appId) {
     Object.assign(w, w.prevRect);
   }
   applyRect(appId);
+  saveLayout();
 }
 
 function applyRect(appId) {
@@ -353,6 +415,7 @@ function startDragOrResize(appId, mode, startEvent) {
     document.body.classList.remove('is-interacting');
     hideSnapPreview();
     if (mode === 'drag' && activeZone) snapTo(appId, activeZone);
+    else saveLayout();
   }
 
   document.addEventListener('pointermove', onMove);
@@ -364,3 +427,5 @@ renderDock();
 snapPreviewEl = document.createElement('div');
 snapPreviewEl.className = 'snap-preview';
 document.getElementById('desktop').appendChild(snapPreviewEl);
+restoreLayout();
+window.addEventListener('beforeunload', () => saveLayout(true));
