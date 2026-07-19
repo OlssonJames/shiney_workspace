@@ -8,8 +8,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 .desktop {
   position: fixed; inset: 0;
   background:
-    radial-gradient(circle at 1px 1px, rgba(155,107,255,0.10) 1px, transparent 0) 0 0/28px 28px,
-    radial-gradient(ellipse at 50% 0%, rgba(155,107,255,0.08) 0%, transparent 60%),
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0) 0 0/28px 28px,
     var(--bg);
   overflow: hidden;
 }
@@ -19,7 +18,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
   z-index: 10000;
   display: flex; gap: 6px;
-  background: rgba(19,19,31,0.78);
+  background: rgba(21,21,23,0.85);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -58,6 +57,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 /* left/top/width/height (used for drag/resize/move) are deliberately not
    in the transition list above, so dragging tracks the pointer exactly
    with no lag — only opacity/scale animate, on open and close only. */
+.window.focused { border-color: var(--accent); }
 .window-titlebar {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 10px 8px 14px;
@@ -94,61 +94,42 @@ body.is-interacting .window-titlebar { cursor: grabbing; }
 .assistant-orb {
   position: relative;
   width: 58px; height: 58px; border-radius: 50%;
-  border: 1px solid rgba(155,107,255,0.5);
-  background: radial-gradient(circle at 35% 30%, #b98bff, #6a3fc9 70%);
-  box-shadow: 0 0 0 1px rgba(155,107,255,0.25), 0 0 22px rgba(155,107,255,0.35), 0 6px 20px rgba(0,0,0,0.45);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease;
 }
-.assistant-orb:hover { transform: translateY(-2px); }
-.orb-icon { font-size: 22px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4)); position: relative; z-index: 2; }
-.orb-ring {
-  position: absolute; inset: -6px; border-radius: 50%;
-  border: 1.5px solid rgba(155,107,255,0.6);
-  opacity: 0; transform: scale(1);
-}
+.assistant-orb:hover { transform: translateY(-2px); border-color: var(--text-muted); }
+.orb-icon { font-size: 22px; position: relative; z-index: 2; }
 
-/* Idle: a slow, quiet breathing glow — present but not distracting. */
-.assistant-orb:not(.listening):not(.speaking):not(.unsupported) {
-  animation: orb-idle 3.6s ease-in-out infinite;
-}
-@keyframes orb-idle {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(155,107,255,0.25), 0 0 18px rgba(155,107,255,0.28), 0 6px 20px rgba(0,0,0,0.45); }
-  50%      { box-shadow: 0 0 0 1px rgba(155,107,255,0.35), 0 0 26px rgba(155,107,255,0.45), 0 6px 20px rgba(0,0,0,0.45); }
-}
+/* Idle: flat, static — no animation, no glow. */
 
-/* Listening: brighter glow + an expanding ring pulse. */
+/* Listening: a plain accent-colored border + a gentle size pulse
+   (scale only, no blur/shadow) so it's still obvious you're being heard. */
 .assistant-orb.listening {
-  box-shadow: 0 0 0 1px rgba(155,107,255,0.6), 0 0 30px rgba(155,107,255,0.6), 0 6px 20px rgba(0,0,0,0.45);
+  border-color: var(--accent);
+  animation: orb-pulse-scale 1s ease-in-out infinite;
 }
-.assistant-orb.listening .orb-ring {
-  animation: orb-ring-pulse 1.4s ease-out infinite;
-}
-@keyframes orb-ring-pulse {
-  0%   { opacity: 0.7; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.55); }
+@keyframes orb-pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
 }
 
-/* Speaking: a gentler, faster shimmer to distinguish from listening. */
+/* Speaking: a muted border, distinct from listening, still flat. */
 .assistant-orb.speaking {
-  animation: orb-speaking 0.9s ease-in-out infinite;
-}
-@keyframes orb-speaking {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(243,236,223,0.35), 0 0 20px rgba(243,236,223,0.35), 0 6px 20px rgba(0,0,0,0.45); }
-  50%      { box-shadow: 0 0 0 1px rgba(243,236,223,0.55), 0 0 28px rgba(243,236,223,0.5), 0 6px 20px rgba(0,0,0,0.45); }
+  border-color: var(--text-muted);
+  background: var(--surface);
 }
 
 .assistant-orb.unsupported {
   cursor: not-allowed;
-  background: radial-gradient(circle at 35% 30%, #6b6b78, #3a3a45 70%);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 6px 20px rgba(0,0,0,0.45);
-  animation: none;
+  opacity: 0.4;
 }
 
 .assistant-bubble {
   max-width: 260px;
-  background: rgba(19,19,31,0.92);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 10px 14px;

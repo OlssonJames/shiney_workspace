@@ -167,14 +167,16 @@ button, input, textarea, select { font-family: inherit; }
 
 /* ---------- Stats view ---------- */
 .stats-hero {
-  background: linear-gradient(135deg, var(--accent), #5b3aa8);
-  border-radius: var(--radius-lg); padding: 24px; color: white; margin-bottom: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg); padding: 24px; color: var(--text); margin-bottom: 20px;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
-.stats-hero-num { font-size: 42px; font-weight: 900; line-height: 1; }
-.stats-hero-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
-.stats-hero-breakdown { display: flex; gap: 18px; font-size: 13px; }
-.stats-hero-breakdown b { display: block; font-size: 18px; }
+.stats-hero-num { font-size: 42px; font-weight: 900; line-height: 1; color: var(--accent); }
+.stats-hero-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.stats-hero-breakdown { display: flex; gap: 18px; font-size: 13px; color: var(--text-muted); }
+.stats-hero-breakdown b { display: block; font-size: 18px; color: var(--text); }
 
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; box-shadow: var(--shadow); }
