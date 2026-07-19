@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Day Planner</title>
+<meta name="description" content="Minute-by-minute daily and weekly time-blocking calendar, synced with the habit tracker." />
+<meta name="theme-color" content="#6366f1" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%236366f1'/%3E%3Crect x='16' y='18' width='32' height='30' rx='3' fill='none' stroke='white' stroke-width='3'/%3E%3Cline x1='16' y1='27' x2='48' y2='27' stroke='white' stroke-width='3'/%3E%3Cline x1='24' y1='14' x2='24' y2='22' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='40' y1='14' x2='40' y2='22' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🗓️</span>
+      <span class="brand-name">Day Planner</span>
+    </div>
+
+    <div class="nav-controls">
+      <button class="btn small" id="prevBtn" aria-label="Previous">←</button>
+      <button class="btn small" id="todayBtn">Today</button>
+      <button class="btn small" id="nextBtn" aria-label="Next">→</button>
+      <span class="range-label" id="rangeLabel"></span>
+    </div>
+
+    <div class="view-toggle">
+      <button class="tab" data-view="timeGridDay" id="dayViewBtn">Day</button>
+      <button class="tab" data-view="timeGridWeek" id="weekViewBtn">Week</button>
+    </div>
+
+    <div class="header-actions">
+      <span class="tracker-badge" id="trackerBadge" title="Habit Tracker connection status">🔗 Checking…</span>
+      <button class="icon-btn" id="categoriesBtn" title="Manage categories" aria-label="Categories">🏷️</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div id="calendar"></div>
+  </main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

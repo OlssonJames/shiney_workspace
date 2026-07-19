@@ -557,6 +557,17 @@ function openSettingsModal() {
         <input type="file" id="importNotesSyncFile" accept="application/json" style="display:none;" />
       </div>
     </div>
+
+    <hr class="divider" />
+
+    <div class="field-group">
+      <label class="field-label">Sync from Day Planner calendar</label>
+      <div class="field-help">Pulls completed calendar blocks (Side Hustle/Gym/BJJ/Coding/Growth/Screen Time) into this day's checkbox here, matched by date. Also safe to run repeatedly — if the Planner and this app share a browser origin, most completions sync automatically without needing this at all.</div>
+      <div class="modal-actions">
+        <button class="btn" id="importCompletionsBtn">⬆ Import Calendar completions</button>
+        <input type="file" id="importCompletionsFile" accept="application/json" style="display:none;" />
+      </div>
+    </div>
   `);
 
   document.getElementById('reminderTimeInput').addEventListener('change', e => {
@@ -586,6 +597,9 @@ function openSettingsModal() {
 
   document.getElementById('importNotesSyncBtn').addEventListener('click', () => document.getElementById('importNotesSyncFile').click());
   document.getElementById('importNotesSyncFile').addEventListener('change', importNotesSync);
+
+  document.getElementById('importCompletionsBtn').addEventListener('click', () => document.getElementById('importCompletionsFile').click());
+  document.getElementById('importCompletionsFile').addEventListener('change', importCompletionsSync);
 }
 
 /* ---------- Sync from Session Notes app ---------- */
@@ -619,6 +633,40 @@ function importNotesSync(e) {
       render();
     } catch (err) {
       showToast('Import failed — not a valid Notes sync file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- Sync from Day Planner calendar ---------- */
+function mergeCompletionsSyncPayload(payload) {
+  let updated = 0;
+  Object.entries(payload.completions).forEach(([ds, byArea]) => {
+    Object.entries(byArea).forEach(([areaId, done]) => {
+      if (!AREA_BY_ID[areaId]) return;
+      const day = Store.ensureDay(ds);
+      if (!day[areaId]) return;
+      if (day[areaId].done !== !!done) { day[areaId].done = !!done; updated++; }
+    });
+  });
+  return updated;
+}
+
+function importCompletionsSync(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!parsed || parsed.kind !== 'habit-tracker-completions-sync' || !parsed.completions) throw new Error('Not a valid Calendar completions file');
+      const updated = mergeCompletionsSyncPayload(parsed);
+      Store.save(true);
+      showToast(updated ? `Synced ${updated} completion${updated === 1 ? '' : 's'} from Day Planner` : 'Already up to date — nothing new to sync');
+      closeModal();
+      render();
+    } catch (err) {
+      showToast('Import failed — not a valid Calendar completions file');
     }
   };
   reader.readAsText(file);
