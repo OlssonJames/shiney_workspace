@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Habit Tracker</title>
+<meta name="description" content="Personal long-term habit and progress tracker." />
+<meta name="theme-color" content="#6366f1" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+<link rel="apple-touch-icon" href="icons/icon.svg" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✓</span>
+      <span class="brand-name">Habit Tracker</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <a href="#/daily" class="tab" data-route="daily">Daily</a>
+      <a href="#/monthly" class="tab" data-route="monthly">Monthly</a>
+      <a href="#/yearly" class="tab" data-route="yearly">Yearly</a>
+      <a href="#/log" class="tab" data-route="log">Log</a>
+      <a href="#/stats" class="tab" data-route="stats">Stats</a>
+    </nav>
+    <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+  </header>
+
+  <main id="app" class="app-main"></main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

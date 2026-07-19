@@ -1,0 +1,13 @@
+{
+  "name": "Habit Tracker",
+  "short_name": "Habits",
+  "description": "Personal long-term habit and progress tracker.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#6366f1",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
