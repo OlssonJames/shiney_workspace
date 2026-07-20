@@ -10,6 +10,7 @@ const APPS = [
   { id: 'tracker', label: 'Habit Tracker', icon: '✅', src: '../habit-tracker/index.html' },
   { id: 'calendar', label: 'Day Planner', icon: '🗓️', src: '../calendar/index.html' },
   { id: 'ideas', label: 'Project Ideas', icon: '💡', src: '../project-ideas/index.html' },
+  { id: 'budget', label: 'Budget', icon: '💰', src: '../budget/index.html' },
 ];
 const APP_BY_ID = Object.fromEntries(APPS.map(a => [a.id, a]));
 

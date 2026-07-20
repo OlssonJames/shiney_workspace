@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Budget</title>
+<meta name="description" content="Manual-entry personal budgeting: income, bills, category budgets with rollover, transactions, and debt payoff." />
+<meta name="theme-color" content="#6366f1" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23e4e7ec'/%3E%3Ctext x='32' y='42' font-size='30' text-anchor='middle' fill='%23101012' font-family='sans-serif' font-weight='bold'%3E%24%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">💰</span>
+      <span class="brand-name">Budget</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <a href="#dashboard" class="tab" data-tab="dashboard">Dashboard</a>
+      <a href="#budget" class="tab" data-tab="budget">Budget</a>
+      <a href="#transactions" class="tab" data-tab="transactions">Transactions</a>
+      <a href="#incomebills" class="tab" data-tab="incomebills">Income &amp; Bills</a>
+      <a href="#debts" class="tab" data-tab="debts">Debts</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn labeled" id="exportBtn" title="Export backup">⬇ <span class="btn-label">Export</span></button>
+      <button class="icon-btn labeled" id="importBtn" title="Import backup">⬆ <span class="btn-label">Import</span></button>
+      <input type="file" id="importFile" accept="application/json" style="display:none;" />
+    </div>
+  </header>
+
+  <main id="app" class="app-main"></main>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

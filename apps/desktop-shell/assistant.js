@@ -35,6 +35,7 @@ const APP_OPEN_SYNONYMS = {
   'habit tracker': 'tracker', 'tracker': 'tracker', 'habits': 'tracker',
   'day planner': 'calendar', 'calendar': 'calendar', 'planner': 'calendar',
   'project ideas': 'ideas', 'ideas': 'ideas', 'projects': 'ideas', 'backlog': 'ideas',
+  'budget': 'budget', 'finances': 'budget', 'money': 'budget',
 };
 
 /* ---------- Date helpers (mirror habit-tracker's own logic) ---------- */
